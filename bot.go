@@ -28,7 +28,7 @@ func echoEndpoint(ctx *fasthttp.RequestCtx) {
 func botLogic(ctx *fasthttp.RequestCtx) {
 	fmt.Println("bot logic starts here")
 	body := ctx.Request.Body()
-	fmt.Println(body)
+	fmt.Println(string(body))
 }
 
 func InitializeApp() *App {
