@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/fasthttp/router"
 	"github.com/valyala/fasthttp"
@@ -11,6 +12,16 @@ import (
 
 type App struct {
 	Router *router.Router
+}
+
+type HttpError struct {
+	Msg        string
+	StatusCode int
+	Body       string
+}
+
+func (h HttpError) Error() string {
+	return fmt.Sprintf("Err while Making Rest Call, Status: %s, StatusCode: %d, Msg: %s", h.Msg, h.StatusCode, h.Body)
 }
 
 func (app *App) Run() {
@@ -44,6 +55,8 @@ func getMessge(messageId string) (string, error) {
 	url := "https://webexapis.com/v1/messages/" + messageId
 	req, _ := http.NewRequest("GET", url, nil)
 
+	req.Header.Set("Authorization", "Bearer "+os.Getenv("BOT_ACCESS_TOKEN"))
+
 	resp, err := client.Do(req)
 	if err != nil {
 		fmt.Printf("err while making http call: %s", err)
@@ -52,7 +65,7 @@ func getMessge(messageId string) (string, error) {
 	data, _ := ioutil.ReadAll(resp.Body)
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
-		return "", err
+		return "", HttpError{resp.Status, resp.StatusCode, string(data)}
 	}
 	return string(data), nil
 }
@@ -66,6 +79,5 @@ func InitializeApp() *App {
 
 func main() {
 	app := InitializeApp()
-	fmt.Println("yo yo")
 	app.Run()
 }
