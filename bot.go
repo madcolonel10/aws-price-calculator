@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
 
 	"github.com/fasthttp/router"
 	"github.com/valyala/fasthttp"
@@ -29,6 +31,30 @@ func botLogic(ctx *fasthttp.RequestCtx) {
 	fmt.Println("bot logic starts here")
 	body := ctx.Request.Body()
 	fmt.Println(string(body))
+	msgId := "Y2lzY29zcGFyazovL3VzL01FU1NBR0UvODA0ZTI4NDAtOGRhOC0xMWViLTlkYTEtMzMxZGY5ZmRkZmJm"
+	data, err := getMessge(msgId)
+	if err != nil {
+		fmt.Printf("error in http:%s\n", err)
+	}
+	fmt.Printf("data from message api: %s\n", data)
+}
+
+func getMessge(messageId string) (string, error) {
+	client := &http.Client{}
+	url := "https://webexapis.com/v1/messages/" + messageId
+	req, _ := http.NewRequest("GET", url, nil)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("err while making http call: %s", err)
+		return "", err
+	}
+	data, _ := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return "", err
+	}
+	return string(data), nil
 }
 
 func InitializeApp() *App {
