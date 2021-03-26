@@ -89,9 +89,6 @@ func InitializeApp() *App {
 }
 
 func main() {
-
-	fmt.Println(response.Data.MessageId)
-
 	app := InitializeApp()
 	app.Run()
 }
