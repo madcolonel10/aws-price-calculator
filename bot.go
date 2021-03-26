@@ -51,14 +51,33 @@ func botLogic(ctx *fasthttp.RequestCtx) {
 	}
 
 	var response Response
-	json.Unmarshal([]byte(body), &response)
+	err := json.Unmarshal([]byte(body), &response)
+	if err != nil {
+		fmt.Printf("error while trying to unmarshal webhook payload: %s\n", err)
+		return
+	}
 
 	msgId := response.Data.MessageId
 	data, err := getMessge(msgId)
 	if err != nil {
 		fmt.Printf("error in http:%s\n", err)
+		return
 	}
 	fmt.Printf("data from message api: %s\n", data)
+	instruction := getInstruction(data)
+	fmt.Printf("instruction for bot is: %s\n", instruction)
+}
+
+func getInstruction(messageResponse string) string {
+	var response struct {
+		Text string `json:"text"`
+	}
+	err := json.Unmarshal([]byte(messageResponse), &response)
+	if err != nil {
+		fmt.Printf("error while trying to unmarshal instruction for bot: %s\n", err)
+		return ""
+	}
+	return response.Text
 }
 
 func getMessge(messageId string) (string, error) {

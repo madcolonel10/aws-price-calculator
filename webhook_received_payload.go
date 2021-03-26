@@ -23,3 +23,15 @@ var messageCreated string = `{
 		"created": "2021-03-25T20:27:21.156Z"
 	}
 }`
+
+var message string = `{
+	"id": "Y2lzY29zcGFyazovL3VzL01FU1NBR0UvNjUxZTIzYTAtOGUxYS0xMWViLTg2ZjEtNTM3YjFiNDBjMWNh",
+	"roomId": "Y2lzY29zcGFyazovL3VzL1JPT00vNDA1NzBhZjAtZDRjYS0xMWVhLTk2YzctYjExZmFhNTI1Mjcx",
+	"roomType": "group",
+	"text": "cops kajsdjasdkasjdsa",
+	"personId": "Y2lzY29zcGFyazovL3VzL1BFT1BMRS83NjNkNDM3Ny00MDViLTRhNWItYWQ2Mi00MWM0ZWUzNmYyNTQ",
+	"personEmail": "visardan@cisco.com",
+	"html": "<p><spark-mention data-object-type=\"person\" data-object-id=\"Y2lzY29zcGFyazovL3VzL1BFT1BMRS9hNmIzZDQ3MS1lYjYxLTQwYjYtYTkwMS04MGRhZjdjZjJjN2U\">cops</spark-mention> kajsdjasdkasjdsa</p>",
+	"mentionedPeople": ["Y2lzY29zcGFyazovL3VzL1BFT1BMRS9hNmIzZDQ3MS1lYjYxLTQwYjYtYTkwMS04MGRhZjdjZjJjN2U"],
+	"created": "2021-03-26T10:02:38.170Z"
+}`
