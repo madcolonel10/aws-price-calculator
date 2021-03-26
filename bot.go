@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/fasthttp/router"
 	"github.com/valyala/fasthttp"
@@ -66,6 +67,9 @@ func botLogic(ctx *fasthttp.RequestCtx) {
 	fmt.Printf("data from message api: %s\n", data)
 	instruction := getInstruction(data)
 	fmt.Printf("instruction for bot is: %s\n", instruction)
+
+	instructionTokens := strings.Split(instruction, " ")
+	fmt.Printf("instruction tokens: %v\n", instructionTokens)
 }
 
 func getInstruction(messageResponse string) string {
