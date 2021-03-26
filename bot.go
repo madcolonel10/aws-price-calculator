@@ -51,7 +51,7 @@ func botLogic(ctx *fasthttp.RequestCtx) {
 	}
 
 	var response Response
-	json.Unmarshal([]byte(messageCreated), &response)
+	json.Unmarshal([]byte(body), &response)
 
 	msgId := response.Data.MessageId
 	data, err := getMessge(msgId)
