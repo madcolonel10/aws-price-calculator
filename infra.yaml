@@ -1,20 +1,23 @@
 dev:
-  services:
-    jenkins:
-      hosts:
-        - vcpu: 3
-        - memory: 25
+  jenkins:
+    hosts:
+      - vcpu: 3
+        memory: 25
+      - vcpu: 3
+        memory: 25
 
 stage:
-  services:
-    jenkins:
-      hosts:
-        - vcpu: 3
-        - memory: 25
+  jenkins:
+    hosts:
+      - vcpu: 3
+        memory: 25
+      - vcpu: 3
+        memory: 25
 
 prod:
-  services:
-    jenkins:
-      hosts:
-        - vcpu: 3
-        - memory: 25
+  jenkins:
+    hosts:
+      - vcpu: 3
+        memory: 25
+      - vcpu: 3
+        memory: 25
