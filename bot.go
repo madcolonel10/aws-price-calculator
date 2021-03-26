@@ -49,6 +49,7 @@ func botLogic(ctx *fasthttp.RequestCtx) {
 	type Response struct {
 		Data struct {
 			MessageId string `json:"id"`
+			RoomId    string `json:"roomId"`
 		} `json:"data"`
 	}
 
@@ -132,7 +133,41 @@ func getInstruction(messageResponse string) string {
 	return response.Text[len(str):]
 }
 
-func publishMessage() {
+func publishMessage(message string, roomId string) (string, error) {
+
+	var body struct {
+		RoomId string `json:"roomId"`
+		Text   string `json:"text"`
+	}
+
+	body.RoomId = roomId
+	body.Text = message
+
+	bodyJson, err := json.Marshal(body)
+	if err != nil {
+		return "", err
+	}
+
+	fmt.Printf("message to be published:%s roomId:%s\n", message, roomId)
+	client := &http.Client{}
+	url := "https://webexapis.com/v1/messages/"
+	req, _ := http.NewRequest("POST", url, strings.NewReader(string(bodyJson)))
+
+	req.Header.Set("Authorization", "Bearer "+os.Getenv("BOT_ACCESS_TOKEN"))
+	req.Header.Set("content-type", "application/json")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		fmt.Printf("err while making http call: %s", err)
+		return "", err
+	}
+	data, _ := ioutil.ReadAll(resp.Body)
+	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode > 299 {
+		return "", HttpError{resp.Status, resp.StatusCode, string(data)}
+	}
+
+	return string(data), nil
 
 }
 
@@ -182,7 +217,11 @@ func downloadInfraDataFromS3() (string, error) {
 }
 
 func main() {
-	// app := InitializeApp()
-	// app.Run()
-	getEstimates([]string{"estimate"})
+	//app := InitializeApp()
+	//app.Run()
+	//getEstimates([]string{"estimate"})
+	_, err := publishMessage("testMessage", "Y2lzY29zcGFyazovL3VzL1JPT00vNDA1NzBhZjAtZDRjYS0xMWVhLTk2YzctYjExZmFhNTI1Mjcx")
+	if err != nil {
+		fmt.Println(err)
+	}
 }
