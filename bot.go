@@ -77,7 +77,8 @@ func getInstruction(messageResponse string) string {
 		fmt.Printf("error while trying to unmarshal instruction for bot: %s\n", err)
 		return ""
 	}
-	return response.Text
+	str := "cops "
+	return response.Text[len(str):]
 }
 
 func getMessge(messageId string) (string, error) {
