@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -42,7 +43,17 @@ func botLogic(ctx *fasthttp.RequestCtx) {
 	fmt.Println("bot logic starts here")
 	body := ctx.Request.Body()
 	fmt.Println(string(body))
-	msgId := "Y2lzY29zcGFyazovL3VzL01FU1NBR0UvODA0ZTI4NDAtOGRhOC0xMWViLTlkYTEtMzMxZGY5ZmRkZmJm"
+
+	type Response struct {
+		Data struct {
+			MessageId string `json:"id"`
+		} `json:"data"`
+	}
+
+	var response Response
+	json.Unmarshal([]byte(messageCreated), &response)
+
+	msgId := response.Data.MessageId
 	data, err := getMessge(msgId)
 	if err != nil {
 		fmt.Printf("error in http:%s\n", err)
@@ -78,6 +89,9 @@ func InitializeApp() *App {
 }
 
 func main() {
+
+	fmt.Println(response.Data.MessageId)
+
 	app := InitializeApp()
 	app.Run()
 }
