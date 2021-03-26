@@ -70,6 +70,16 @@ func botLogic(ctx *fasthttp.RequestCtx) {
 
 	instructionTokens := strings.Split(instruction, " ")
 	fmt.Printf("instruction tokens: %v\n", instructionTokens)
+
+	instructionType := strings.TrimSpace(instructionTokens[0])
+
+	switch instructionType {
+	case "get":
+		fmt.Println("get instuction")
+	default:
+		fmt.Println("invalid instruction")
+		return
+	}
 }
 
 func getInstruction(messageResponse string) string {
