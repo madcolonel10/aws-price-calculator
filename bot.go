@@ -99,14 +99,15 @@ func botLogic(ctx *fasthttp.RequestCtx) {
 	switch instructionType {
 	case "get":
 		fmt.Println("get instuction")
-
+		result := getEstimates(instructionTokens[1:])
+		publishMessage(result, response.Data.RoomId)
 	default:
 		fmt.Println("invalid instruction")
 		return
 	}
 }
 
-func getEstimates(params []string) {
+func getEstimates(params []string) string {
 	//0 - serviceName
 	//1 - env for which we will estimate the price
 	//2 - time window 1 quarter is default
@@ -120,7 +121,7 @@ func getEstimates(params []string) {
 
 	data, err := downloadInfraDataFromS3()
 	if err != nil {
-		return
+		return ""
 	}
 	fmt.Printf("data:%s\n", data)
 
@@ -128,11 +129,11 @@ func getEstimates(params []string) {
 	err = yaml.Unmarshal([]byte(data), &m)
 
 	//fmt.Println(m["dev"]["jenkins"].Hosts[0].Memory)
-	getAwsPricingForHostsConfig(m[env][serviceName].Hosts)
-
+	nQuartersInt, _ := strconv.Atoi(nQuarters)
+	return getAwsPricingForHostsConfig(m[env][serviceName].Hosts, nQuartersInt)
 }
 
-func getAwsPricingForHostsConfig(hostsConfig []HostConfiguration) {
+func getAwsPricingForHostsConfig(hostsConfig []HostConfiguration, nQuarters int) string {
 
 	cfg, err := config.LoadDefaultConfig(context.TODO())
 	if err != nil {
@@ -140,7 +141,30 @@ func getAwsPricingForHostsConfig(hostsConfig []HostConfiguration) {
 	}
 	client := pricing.NewFromConfig(cfg)
 
+	type PriceDimension struct {
+		Unit         string `json:"unit"`
+		PricePerUnit struct {
+			Usd string `json:"USD"`
+		} `json:"pricePerUnit"`
+	}
+
+	type OfferTerm struct {
+		OfferTermCode   string                    `json:"offerTermCode"`
+		PriceDimensions map[string]PriceDimension `json:"priceDimensions"`
+	}
+
+	type Product struct {
+		Sku   string `json:"sku"`
+		Terms struct {
+			Reserved map[string]OfferTerm `json:"Reserved"`
+		} `json:"terms"`
+	}
+
+	totalCost := 0.0
+
 	for _, host := range hostsConfig {
+
+		minCostEachHost := -1.0
 		//cpu ram storage instanceType operating-system (rhel, centos, ubuntu)
 		filters := []types.Filter{
 			{
@@ -162,7 +186,7 @@ func getAwsPricingForHostsConfig(hostsConfig []HostConfiguration) {
 		input := &pricing.GetProductsInput{
 			Filters:       filters,
 			FormatVersion: aws.String("aws_v1"),
-			MaxResults:    20,
+			MaxResults:    20, //each page we are getting max 20 results
 			ServiceCode:   aws.String("AmazonEC2"),
 		}
 
@@ -172,16 +196,39 @@ func getAwsPricingForHostsConfig(hostsConfig []HostConfiguration) {
 		i := 0
 		for paginator.HasMorePages() && i < 2 {
 			fmt.Printf("i:%d\n", i)
-			_, err := paginator.NextPage(context.TODO())
+			output, err := paginator.NextPage(context.TODO())
+			//test, _ := json.Marshal(output)
+			//fmt.Println(string(test))
 			if err != nil {
 				log.Printf("error: %v", err)
 				return
 			}
+
+			for _, productJsonStr := range output.PriceList {
+				var product Product = Product{}
+				json.Unmarshal([]byte(productJsonStr), &product)
+				reserved := product.Terms.Reserved
+				for _, oT := range reserved {
+					for _, pD := range oT.PriceDimensions {
+						val, _ := strconv.ParseFloat(pD.PricePerUnit.Usd, 64)
+						fmt.Printf("price val:%f\n", val)
+						if val != 0.0 && (minCostEachHost == -1.0 || minCostEachHost > val) {
+							minCostEachHost = val
+						}
+
+					}
+					break //there is only one key
+				}
+			}
+
 			i++
 		}
-
 		fmt.Printf("loops:%d\n", i)
+		fmt.Printf("minCostEachHost:%f\n", minCostEachHost)
+
+		totalCost += (minCostEachHost * 24 * 30 * 3 * float64(nQuarters))
 	}
+	return fmt.Sprintf("total cost:%f for nQuarters:%d\n", totalCost, nQuarters)
 }
 
 func getInstruction(messageResponse string) string {
@@ -281,11 +328,11 @@ func downloadInfraDataFromS3() (string, error) {
 }
 
 func main() {
-	//app := InitializeApp()
-	//app.Run()
-	getEstimates([]string{"estimate"})
-	// _, err := publishMessage("testMessage", "Y2lzY29zcGFyazovL3VzL1JPT00vNDA1NzBhZjAtZDRjYS0xMWVhLTk2YzctYjExZmFhNTI1Mjcx")
-	// if err != nil {
-	// 	fmt.Println(err)
-	// }
+	app := InitializeApp()
+	app.Run()
+	// getEstimates([]string{"estimate"})
+	// // _, err := publishMessage("testMessage", "Y2lzY29zcGFyazovL3VzL1JPT00vNDA1NzBhZjAtZDRjYS0xMWVhLTk2YzctYjExZmFhNTI1Mjcx")
+	// // if err != nil {
+	// // 	fmt.Println(err)
+	// // }
 }
