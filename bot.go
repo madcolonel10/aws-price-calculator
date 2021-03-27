@@ -201,7 +201,7 @@ func getAwsPricingForHostsConfig(hostsConfig []HostConfiguration, nQuarters int)
 			//fmt.Println(string(test))
 			if err != nil {
 				log.Printf("error: %v", err)
-				return
+				return ""
 			}
 
 			for _, productJsonStr := range output.PriceList {
