@@ -195,7 +195,7 @@ func getAwsPricingForHostsConfig(hostsConfig []HostConfiguration, nQuarters int)
 		})
 		i := 0
 		for paginator.HasMorePages() {
-			fmt.Printf("i:%d\n", i)
+			//fmt.Printf("i:%d\n", i)
 			output, err := paginator.NextPage(context.TODO())
 			//test, _ := json.Marshal(output)
 			//fmt.Println(string(test))
@@ -211,7 +211,7 @@ func getAwsPricingForHostsConfig(hostsConfig []HostConfiguration, nQuarters int)
 				for _, oT := range reserved {
 					for _, pD := range oT.PriceDimensions {
 						val, _ := strconv.ParseFloat(pD.PricePerUnit.Usd, 64)
-						fmt.Printf("price val:%f\n", val)
+						//fmt.Printf("price val:%f\n", val)
 						if val != 0.0 && (minCostEachHost == -1.0 || minCostEachHost > val) {
 							minCostEachHost = val
 						}
@@ -223,7 +223,7 @@ func getAwsPricingForHostsConfig(hostsConfig []HostConfiguration, nQuarters int)
 
 			i++
 		}
-		fmt.Printf("loops:%d\n", i)
+		//fmt.Printf("loops:%d\n", i)
 		fmt.Printf("minCostEachHost:%f\n", minCostEachHost)
 
 		totalCost += (minCostEachHost * 24 * 30 * 3 * float64(nQuarters))
