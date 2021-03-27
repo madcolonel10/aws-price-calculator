@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/aws/aws-sdk-go-v2/config"
@@ -18,6 +19,9 @@ import (
 	"github.com/valyala/fasthttp"
 	"gopkg.in/yaml.v2"
 )
+
+//todo use go routines to send out notifications if the operation is taking very long that it might take a while for the computation to complete
+//host configuration should match one of the existing products in aws
 
 type App struct {
 	Router *router.Router
@@ -136,45 +140,48 @@ func getAwsPricingForHostsConfig(hostsConfig []HostConfiguration) {
 	}
 	client := pricing.NewFromConfig(cfg)
 
-	//cpu ram storage instanceType operating-system (rhel, centos, ubuntu)
-	input := &pricing.GetProductsInput{
-		Filters: []types.Filter{
+	for _, host := range hostsConfig {
+		//cpu ram storage instanceType operating-system (rhel, centos, ubuntu)
+		filters := []types.Filter{
 			{
 				Field: aws.String("ServiceCode"),
 				Type:  types.FilterTypeTermMatch,
 				Value: aws.String("AmazonEC2"),
 			},
 			{
-				Field: aws.String("instanceType"),
-				Type:  types.FilterTypeTermMatch,
-				Value: aws.String("t2.medium"),
-			},
-			{
 				Field: aws.String("vcpu"),
 				Type:  types.FilterTypeTermMatch,
-				Value: aws.String("2"),
+				Value: aws.String(strconv.Itoa(host.VCpu)),
 			},
 			{
 				Field: aws.String("memory"),
 				Type:  types.FilterTypeTermMatch,
-				Value: aws.String("4 GiB"),
+				Value: aws.String(strconv.Itoa(host.Memory) + " GiB"),
 			},
-		},
-		FormatVersion: aws.String("aws_v1"),
-		MaxResults:    5,
-		ServiceCode:   aws.String("AmazonEC2"),
+		}
+		input := &pricing.GetProductsInput{
+			Filters:       filters,
+			FormatVersion: aws.String("aws_v1"),
+			MaxResults:    100,
+			ServiceCode:   aws.String("AmazonEC2"),
+		}
+
+		paginator := pricing.NewGetProductsPaginator(client, input, func(gppo *pricing.GetProductsPaginatorOptions) {
+			gppo.StopOnDuplicateToken = true
+		})
+		i := 0
+		for paginator.HasMorePages() {
+			fmt.Printf("i:%d\n", i)
+			_, err := paginator.NextPage(context.TODO())
+			if err != nil {
+				log.Printf("error: %v", err)
+				return
+			}
+			i++
+		}
+
+		fmt.Printf("loops:%d\n", i)
 	}
-
-	result, err := client.GetProducts(context.TODO(), input)
-	if err != nil {
-		fmt.Println("error here")
-		fmt.Println(err.Error())
-		return
-	}
-
-	jsonResult, err := json.Marshal(result)
-
-	fmt.Println(string(jsonResult))
 }
 
 func getInstruction(messageResponse string) string {
