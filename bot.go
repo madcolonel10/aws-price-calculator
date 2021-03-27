@@ -186,7 +186,7 @@ func getAwsPricingForHostsConfig(hostsConfig []HostConfiguration, nQuarters int)
 		input := &pricing.GetProductsInput{
 			Filters:       filters,
 			FormatVersion: aws.String("aws_v1"),
-			MaxResults:    20, //each page we are getting max 20 results
+			MaxResults:    100, //each page we are getting max 20 results
 			ServiceCode:   aws.String("AmazonEC2"),
 		}
 
@@ -194,7 +194,7 @@ func getAwsPricingForHostsConfig(hostsConfig []HostConfiguration, nQuarters int)
 			gppo.StopOnDuplicateToken = true
 		})
 		i := 0
-		for paginator.HasMorePages() && i < 2 {
+		for paginator.HasMorePages() {
 			fmt.Printf("i:%d\n", i)
 			output, err := paginator.NextPage(context.TODO())
 			//test, _ := json.Marshal(output)
