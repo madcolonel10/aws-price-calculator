@@ -1,13 +1,19 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os"
 	"strings"
 
+	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/service/pricing"
+	"github.com/aws/aws-sdk-go-v2/service/pricing/types"
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/fasthttp/router"
 	"github.com/valyala/fasthttp"
 	"gopkg.in/yaml.v2"
@@ -21,6 +27,17 @@ type HttpError struct {
 	Msg        string
 	StatusCode int
 	Body       string
+}
+
+type HostConfiguration struct {
+	VCpu   int
+	Memory int
+}
+
+//service will be jenkins, bitbucket..
+//each service needs a bunch of hosts to run
+type CodeService struct {
+	Hosts []HostConfiguration
 }
 
 func (h HttpError) Error() string {
@@ -103,21 +120,61 @@ func getEstimates(params []string) {
 	}
 	fmt.Printf("data:%s\n", data)
 
-	type HostConfiguration struct {
-		VCpu   int
-		Memory int
-	}
-
-	//service will be jenkins, bitbucket..
-	//each service needs a bunch of hosts to run
-	type CodeService struct {
-		Hosts []HostConfiguration
-	}
-
 	var m map[string]map[string]CodeService = make(map[string]map[string]CodeService)
 	err = yaml.Unmarshal([]byte(data), &m)
 
-	fmt.Println(m["dev"]["jenkins"].Hosts[0].Memory)
+	//fmt.Println(m["dev"]["jenkins"].Hosts[0].Memory)
+	getAwsPricingForHostsConfig(m[env][serviceName].Hosts)
+
+}
+
+func getAwsPricingForHostsConfig(hostsConfig []HostConfiguration) {
+
+	cfg, err := config.LoadDefaultConfig(context.TODO())
+	if err != nil {
+		log.Fatal(err)
+	}
+	client := pricing.NewFromConfig(cfg)
+
+	//cpu ram storage instanceType operating-system (rhel, centos, ubuntu)
+	input := &pricing.GetProductsInput{
+		Filters: []types.Filter{
+			{
+				Field: aws.String("ServiceCode"),
+				Type:  types.FilterTypeTermMatch,
+				Value: aws.String("AmazonEC2"),
+			},
+			{
+				Field: aws.String("instanceType"),
+				Type:  types.FilterTypeTermMatch,
+				Value: aws.String("t2.medium"),
+			},
+			{
+				Field: aws.String("vcpu"),
+				Type:  types.FilterTypeTermMatch,
+				Value: aws.String("2"),
+			},
+			{
+				Field: aws.String("memory"),
+				Type:  types.FilterTypeTermMatch,
+				Value: aws.String("4 GiB"),
+			},
+		},
+		FormatVersion: aws.String("aws_v1"),
+		MaxResults:    5,
+		ServiceCode:   aws.String("AmazonEC2"),
+	}
+
+	result, err := client.GetProducts(context.TODO(), input)
+	if err != nil {
+		fmt.Println("error here")
+		fmt.Println(err.Error())
+		return
+	}
+
+	jsonResult, err := json.Marshal(result)
+
+	fmt.Println(string(jsonResult))
 }
 
 func getInstruction(messageResponse string) string {
@@ -219,9 +276,9 @@ func downloadInfraDataFromS3() (string, error) {
 func main() {
 	//app := InitializeApp()
 	//app.Run()
-	//getEstimates([]string{"estimate"})
-	_, err := publishMessage("testMessage", "Y2lzY29zcGFyazovL3VzL1JPT00vNDA1NzBhZjAtZDRjYS0xMWVhLTk2YzctYjExZmFhNTI1Mjcx")
-	if err != nil {
-		fmt.Println(err)
-	}
+	getEstimates([]string{"estimate"})
+	// _, err := publishMessage("testMessage", "Y2lzY29zcGFyazovL3VzL1JPT00vNDA1NzBhZjAtZDRjYS0xMWVhLTk2YzctYjExZmFhNTI1Mjcx")
+	// if err != nil {
+	// 	fmt.Println(err)
+	// }
 }
