@@ -206,7 +206,7 @@ func getAwsPricingForHostsConfig(hostsConfig []HostConfiguration, nQuarters int)
 
 			for _, productJsonStr := range output.PriceList {
 				var product Product = Product{}
-				fmt.Println(productJsonStr)
+				//fmt.Println(productJsonStr)
 				json.Unmarshal([]byte(productJsonStr), &product)
 				reserved := product.Terms.Reserved
 				for _, oT := range reserved {
