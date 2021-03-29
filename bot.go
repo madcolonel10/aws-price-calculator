@@ -186,7 +186,7 @@ func getAwsPricingForHostsConfig(hostsConfig []HostConfiguration, nQuarters int)
 		input := &pricing.GetProductsInput{
 			Filters:       filters,
 			FormatVersion: aws.String("aws_v1"),
-			MaxResults:    100, //each page we are getting max 20 results
+			MaxResults:    100,
 			ServiceCode:   aws.String("AmazonEC2"),
 		}
 
@@ -206,6 +206,7 @@ func getAwsPricingForHostsConfig(hostsConfig []HostConfiguration, nQuarters int)
 
 			for _, productJsonStr := range output.PriceList {
 				var product Product = Product{}
+				fmt.Println(productJsonStr)
 				json.Unmarshal([]byte(productJsonStr), &product)
 				reserved := product.Terms.Reserved
 				for _, oT := range reserved {
